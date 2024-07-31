@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 contract Assessment {
     address public owner;
-     mapping(address => uint256) public balance;
+    mapping(address => uint256) public balance;
 
     event Deposit(uint256 amount);
     event Withdraw(uint256 amount);
@@ -19,9 +19,12 @@ contract Assessment {
     }
 
     function deposit(uint256 _amount) public payable {
+        // Ensure the sent value matches the amount to deposit
+        require(msg.value == _amount, "Incorrect ETH amount sent");
+
         uint256 _previousBalance = balance[owner];
 
-        // Make sure this is the owner
+        // Ensure this is the owner
         require(msg.sender == owner, "You are not the owner of this account");
 
         // Perform transaction
@@ -47,6 +50,9 @@ contract Assessment {
         // Withdraw the given amount
         balance[owner] -= _withdrawAmount;
 
+        // Transfer the amount to the owner
+        payable(owner).transfer(_withdrawAmount);
+
         // Assert the balance is correct
         assert(balance[owner] == (_previousBalance - _withdrawAmount));
 
@@ -54,16 +60,23 @@ contract Assessment {
         emit Withdraw(_withdrawAmount);
     }
 
-    function send(address _recipient, uint256 _amount) public {
+    function send(address payable _recipient, uint256 _amount) public {
         require(msg.sender == owner, "You are not the owner of this account");
         require(_amount <= balance[owner], "Insufficient balance");
 
         // Transfer the specified amount to the recipient
-        balance[_recipient]+=_amount;
-        // Update the balance
         balance[owner] -= _amount;
+        balance[_recipient] += _amount;
+
+        // Transfer the amount in Ether
+        _recipient.transfer(_amount);
 
         // Emit the event
         emit Sent(_recipient, _amount);
+    }
+
+    // Function to receive ETH directly
+    receive() external payable {
+        deposit(msg.value);
     }
 }

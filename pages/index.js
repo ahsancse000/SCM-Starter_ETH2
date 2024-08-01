@@ -1,33 +1,33 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import atm_abi from "../artifacts/contracts/Assessment.sol/Assessment.json";
+import contractABI from "../artifacts/contracts/YourContract.sol/YourContract.json";
 
 export default function HomePage() {
-  const [ethWallet, setEthWallet] = useState(null);
-  const [account, setAccount] = useState(null);
-  const [atm, setATM] = useState(null);
-  const [balance, setBalance] = useState(null);
+  const [ethWallet, setEthWallet] = useState(undefined);
+  const [account, setAccount] = useState(undefined);
+  const [contract, setContract] = useState(undefined);
+  const [balance, setBalance] = useState(undefined);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
 
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-  const atmABI = atm_abi.abi;
+  const contractAddress = "0xYourContractAddress"; // Replace with your contract address
+  const contractABI = contractABI.abi;
 
   const getWallet = async () => {
     if (window.ethereum) {
       setEthWallet(window.ethereum);
     } else {
-      alert("MetaMask not found. Please install MetaMask.");
+      alert("Please install MetaMask to use this app.");
     }
   };
 
-  const handleAccount = (accounts) => {
+  const handleAccount = async (accounts) => {
     if (accounts.length > 0) {
-      console.log("Account connected: ", accounts[0]);
       setAccount(accounts[0]);
+      getContract();
+      getBalance();
     } else {
       console.log("No account found");
-      setAccount(null);
     }
   };
 
@@ -40,24 +40,23 @@ export default function HomePage() {
     try {
       const accounts = await ethWallet.request({ method: "eth_requestAccounts" });
       handleAccount(accounts);
-      getATMContract();
     } catch (error) {
-      console.error("Error connecting to MetaMask:", error);
+      console.error("Error connecting account:", error);
     }
   };
 
-  const getATMContract = () => {
+  const getContract = () => {
     const provider = new ethers.providers.Web3Provider(ethWallet);
     const signer = provider.getSigner();
-    const atmContract = new ethers.Contract(contractAddress, atmABI, signer);
-    setATM(atmContract);
+    const contractInstance = new ethers.Contract(contractAddress, contractABI, signer);
+    setContract(contractInstance);
   };
 
   const getBalance = async () => {
-    if (atm) {
+    if (contract && account) {
       try {
-        const balance = await atm.getBalance();
-        setBalance(ethers.utils.formatEther(balance)); // Format balance to ETH
+        const balance = await contract.getBalance();
+        setBalance(ethers.utils.formatEther(balance));
       } catch (error) {
         console.error("Error fetching balance:", error);
       }
@@ -65,42 +64,83 @@ export default function HomePage() {
   };
 
   const deposit = async () => {
-    if (atm) {
+    if (contract) {
       try {
-        let tx = await atm.deposit(ethers.utils.parseEther("1"));
+        const tx = await contract.deposit(ethers.utils.parseEther(amount));
         await tx.wait();
         getBalance();
       } catch (error) {
-        console.error("Error depositing:", error);
+        console.error("Error during deposit:", error);
       }
     }
   };
 
   const withdraw = async () => {
-    if (atm) {
+    if (contract) {
       try {
-        let tx = await atm.withdraw(ethers.utils.parseEther("1"));
+        const tx = await contract.withdraw(ethers.utils.parseEther(amount));
         await tx.wait();
         getBalance();
       } catch (error) {
-        console.error("Error withdrawing:", error);
+        console.error("Error during withdraw:", error);
       }
     }
   };
 
   const send = async () => {
-    if (atm && recipient && amount) {
+    if (contract) {
       try {
-        const parsedAmount = ethers.utils.parseEther(amount);
-        let tx = await atm.send(recipient, parsedAmount);
+        const tx = await contract.send(recipient, ethers.utils.parseEther(amount));
         await tx.wait();
         getBalance();
       } catch (error) {
-        console.error("Error sending:", error);
+        console.error("Error during send:", error);
       }
-    } else {
-      alert("Please provide recipient and amount");
     }
+  };
+
+  const renderContent = () => {
+    if (!ethWallet) {
+      return <p>Please install MetaMask in order to use this application.</p>;
+    }
+
+    if (!account) {
+      return (
+        <button onClick={connectAccount} className="custom-button">
+          Connect MetaMask Wallet
+        </button>
+      );
+    }
+
+    return (
+      <div>
+        <p>Your Account: {account}</p>
+        <p>Your Balance: {balance} ETH</p>
+        <div className="button-group">
+          <button onClick={deposit} className="custom-button">Deposit</button>
+          <button onClick={withdraw} className="custom-button">Withdraw</button>
+        </div>
+        <div className="input-group">
+          <input
+            type="text"
+            placeholder="Recipient Address"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            className="custom-input"
+          />
+          <input
+            type="text"
+            placeholder="Amount (ETH)"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="custom-input"
+          />
+          <button onClick={send} className="custom-button">
+            Send
+          </button>
+        </div>
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -110,67 +150,62 @@ export default function HomePage() {
   return (
     <main className="container">
       <header>
-        <div className="a">
-          <h1>Metamask Wallet Integration</h1>
+        <div className="header-content">
+          <h1>MetaMask Wallet Integration</h1>
         </div>
       </header>
-      <div style={{ textAlign: "center", fontSize: "30px" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "35px" }}></div>
-      </div>
-      {ethWallet && (
-        !account ? (
-          <button onClick={connectAccount}>Please connect your Metamask wallet</button>
-        ) : (
-          <div>
-            <p>Your Account: {account}</p>
-            <p>Your Balance: {balance}</p>
-            <div className="cus">
-              <button onClick={deposit}>Deposit 1 ETH</button>
-              <button onClick={withdraw}>Withdraw 1 ETH</button>
-            </div>
-            <div>
-              <input
-                type="text"
-                placeholder="Recipient Address"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Amount (in ETH)"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-              <button onClick={send} className="custom-button">Send</button>
-            </div>
-          </div>
-        )
-      )}
+      {renderContent()}
       <style jsx>{`
         body {
-          background-color: black;
+          margin: 0;
+          font-family: Arial, sans-serif;
         }
         .container {
-          text-align: center;
-          background-color: black;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          background: linear-gradient(135deg, #667eea, #764ba2);
           color: white;
+          text-align: center;
         }
-        .a {
-          background-color: black;
-          padding: 10px;
-          margin: 20px;
+        .header-content {
+          padding: 20px;
+          background: rgba(0, 0, 0, 0.5);
+          border-radius: 10px;
+          margin-bottom: 20px;
         }
-        .cus {
-          background-color: #b48241;
+        .button-group {
+          display: flex;
+          justify-content: center;
+          margin: 20px 0;
+        }
+        .custom-button {
+          background-color: #4a90e2;
           color: white;
           border: none;
-          border-radius: 50px;
+          padding: 10px 20px;
+          margin: 0 10px;
+          border-radius: 5px;
           cursor: pointer;
-          transition: transform 0.3s ease-in-out;
-          padding: 10px;
+          transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
         }
         .custom-button:hover {
           transform: translateY(-5px);
+          background-color: #357ab8;
+        }
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .custom-input {
+          margin: 10px 0;
+          padding: 10px;
+          border-radius: 5px;
+          border: 1px solid #ccc;
+          width: 250px;
         }
       `}</style>
     </main>

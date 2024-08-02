@@ -1,82 +1,199 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
-
-contract Assessment {
-    address public owner;
-    mapping(address => uint256) public balance;
-
-    event Deposit(uint256 amount);
-    event Withdraw(uint256 amount);
-    event Sent(address recipient, uint256 amount);
-
-    constructor(uint256 initBalance) payable {
-        owner = msg.sender;
-        balance[owner] = initBalance;
-    }
-
-    function getBalance() public view returns (uint256) {
-        return balance[owner];
-    }
-
-    function deposit(uint256 _amount) public payable {
-        // Ensure the sent value matches the amount to deposit
-        require(msg.value == _amount, "Incorrect ETH amount sent");
-
-        uint256 _previousBalance = balance[owner];
-
-        // Ensure this is the owner
-        require(msg.sender == owner, "You are not the owner of this account");
-
-        // Perform transaction
-        balance[owner] += _amount;
-
-        // Assert transaction completed successfully
-        assert(balance[owner] == _previousBalance + _amount);
-
-        // Emit the event
-        emit Deposit(_amount);
-    }
-
-    // Custom error
-    error InsufficientBalance(uint256 balance, uint256 withdrawAmount);
-
-    function withdraw(uint256 _withdrawAmount) public {
-        require(msg.sender == owner, "You are not the owner of this account");
-        uint256 _previousBalance = balance[owner];
-        if (balance[owner] < _withdrawAmount) {
-            revert InsufficientBalance({ balance: balance[owner], withdrawAmount: _withdrawAmount });
-        }
-
-        // Withdraw the given amount
-        balance[owner] -= _withdrawAmount;
-
-        // Transfer the amount to the owner
-        payable(owner).transfer(_withdrawAmount);
-
-        // Assert the balance is correct
-        assert(balance[owner] == (_previousBalance - _withdrawAmount));
-
-        // Emit the event
-        emit Withdraw(_withdrawAmount);
-    }
-
-    function send(address payable _recipient, uint256 _amount) public {
-        require(msg.sender == owner, "You are not the owner of this account");
-        require(_amount <= balance[owner], "Insufficient balance");
-
-        // Transfer the specified amount to the recipient
-        balance[owner] -= _amount;
-        balance[_recipient] += _amount;
-
-        // Transfer the amount in Ether
-        _recipient.transfer(_amount);
-
-        // Emit the event
-        emit Sent(_recipient, _amount);
-    }
-
-    // Function to receive ETH directly
-    receive() external payable {
-        deposit(msg.value);
-    }
-}
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAddress",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "selectedAuditor",
+        "type": "address"
+      }
+    ],
+    "name": "AuditorSelected",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "allAuditors",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "category",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "email",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "_auditor",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentGigs",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isConfirmed",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "confirmationTime",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "contractInstance",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Audit.AuditorContracts[]",
+            "name": "contractsAddress",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct Audit.Auditor[]",
+        "name": "_auditors",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "auditor_",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "category",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "email",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "_auditor",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currentGigs",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isConfirmed",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "confirmationTime",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "auditorsCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_category",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_email",
+        "type": "string"
+      }
+    ],
+    "name": "becomeAuditor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_category",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ranNum",
+        "type": "uint256"
+      }
+    ],
+    "name": "getAuditorByCategory",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "returnSelectedAuditor",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

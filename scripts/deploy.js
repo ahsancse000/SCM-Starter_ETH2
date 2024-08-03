@@ -1,25 +1,21 @@
-// Import Hardhat Runtime Environment
+// We require the Hardhat Runtime Environment explicitly here. This is optional
+// but useful for running the script in a standalone fashion through `node <script>`.
+//
+// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
+// will compile your contracts, add the Hardhat Runtime Environment's members to the
+// global scope, and execute the script.
 const hre = require("hardhat");
 
-// Main function to deploy the contract
 async function main() {
-  // Set the initial balance for the contract in ETH
-  const initBalance = ethers.utils.parseEther("5.0"); // 5 ETH
-  
-  // Get the contract factory for the Assessment contract
-  const Assessment = await hre.ethers.getContractFactory("Assessment");
-  
-  // Deploy the contract with the initial balance
-  const assessment = await Assessment.deploy(initBalance);
-  
-  // Wait for the contract to be deployed
+  const Assessment = await hre.ethers.getContractFactory("SolidFundr");
+  const assessment = await Assessment.deploy();
   await assessment.deployed();
-  
-  // Log the contract address and initial balance
-  console.log(`A contract with balance of 5 ETH deployed to ${assessment.address}`);
+
+  console.log(`A contract with balance of 0 eth deployed to ${assessment.address}`);
 }
 
-// Execute the main function and handle errors
+// We recommend this pattern to be able to use async/await everywhere
+// and properly handle errors.
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;

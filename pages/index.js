@@ -16,7 +16,7 @@ export default function HomePage() {
   const [titleInput, setTitleInput] = useState("");
   const [descriptionInput, setDescriptionInput] = useState("");
 
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  const contractAddress = "0x700b6A60ce7EaaEA56F065753d8dcB9653dbAD35";
   const contractABI = SolidFundrABI.abi;
 
   const initWallet = async () => {
